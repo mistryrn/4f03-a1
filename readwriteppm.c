@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "mpi.h"
 
 #include "a1.h"
 
@@ -33,13 +32,7 @@ RGB * readPPM(char* file, int* width, int* height, int* max)
 
   FILE *fd;
   char c;
-  int i,n, my_rank;
-
-  // initialize MPI
-  MPI_Status status;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  int source, total, dest = 0, tag = 0;
-
+  int i,n;
   char b[100];
   int red, green, blue;
   
@@ -48,30 +41,27 @@ RGB * readPPM(char* file, int* width, int* height, int* max)
   n = fscanf(fd,"%[^\n] ",b);
   if(b[0]!='P'|| b[1] != '3')
     {
-      if (my_rank == 0) {
-        printf("%s is not a PPM file!\n",file); 
-      }
+      printf("%s is not a PPM file!\n",file); 
       exit(0);
     }
-  if (my_rank == 0) {
-    // printf("%s is a PPM file\n", file);
-  }
+
+  printf("%s is a PPM file\n", file);
+
   n = fscanf(fd, "%c",&c);
   while(c == '#') 
     {
       n = fscanf(fd, "%[^\n] ", b);
-      if (my_rank == 0) {
-        printf("%s\n",b);
-      }
+      printf("%s\n",b);
+
       n = fscanf(fd, "%c",&c);
     }
   ungetc(c,fd); 
   n = fscanf(fd, "%d %d %d", width, height, max);
   assert(n==3);
 
-  if (my_rank == 0) {
-    // printf("%d x %d image, max value= %d\n", *width, *height, *max);
-  }
+
+  printf("%d x %d image, max value= %d\n", *width, *height, *max);
+
 
   // size of image
   int size = *width*(*height);

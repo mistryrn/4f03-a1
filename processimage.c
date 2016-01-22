@@ -13,7 +13,7 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   int verbose = 1;
   int i, my_rank, p, n, my_range[2];
   double a, b;
-
+  // MPI_Init(&argc, &argv);
   // initialize MPI
   MPI_Status status;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -22,21 +22,38 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
 
   // Get total size of image
   int size = width*height;
-
   // Get number of pixels per process
   double h = size/p;
-
   // Get parameters from command line
   int window = atoi(argv[3]);
   char *filter = argv[4];
 
-  // Print header
-  if (my_rank == 0 && verbose) {
+  if (my_rank != 0) {
+    RGB *image = (RGB*)malloc(size*sizeof(RGB));
+  } else if (verbose) {
     printf("Window size:     %dx%d\nFilter Type:     %s\n", window, window, filter);
     printf("Pixels in image: %d\nPixels/process:  %.0f\nTotal processes: %d\n", size, h, p);
     printf("----------------------\n");
   }
 
+  /* create a type for struct RGB */
+  const int nitems=3;
+  int          blocklengths[3] = {sizeof(char),sizeof(char),sizeof(char)};
+  MPI_Datatype types[3] = {MPI_CHAR, MPI_CHAR, MPI_CHAR};
+  MPI_Datatype mpi_rgb_type;
+  MPI_Aint     offsets[3];
+  offsets[0] = offsetof(RGB, r);
+  offsets[1] = offsetof(RGB, g);
+  offsets[2] = offsetof(RGB, b);
+  MPI_Type_create_struct(nitems, blocklengths, offsets, types, &mpi_rgb_type);
+  MPI_Type_commit(&mpi_rgb_type);
+  /* ------ */
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  printf("[%d]: Before Bcast, buf is %d\n", my_rank, image); 
+  MPI_Bcast(&image, size, mpi_rgb_type, 0, MPI_COMM_WORLD); 
+  printf("[%d]: After Bcast, buf is %d\n", my_rank, image);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   // Determine lower and upper values for pixel range
   my_range[0] = size/p*my_rank;
@@ -62,12 +79,14 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
       printf("Process %d/%d message received.\n", i, p);
     }
   }
-
+  
+  MPI_Finalize();
 }
 
 void meanFilter(int width, int height, RGB *image, int window, int start, int end){
   int thing = (window - 1)/2;
   int topleft, current;
+  printf("Crunching pixels (%d - %d)...\n", start, end);
   double sum;
   RGB *current_pixel;
   // For each pixel in this worker's quota
