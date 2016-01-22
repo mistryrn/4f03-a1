@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-void meanFilter(int width, int height, RGB *image, int window, int start, int end);
+void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank);
 // void medianFilter();
 
 void processImage(int width, int height, RGB *image, int argc, char** argv)
@@ -39,33 +39,35 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
 
 
   // Determine lower and upper values for pixel range
-  my_range[0] = size/p*my_rank;
+  my_range[0] = h*my_rank;
 
   // ensure last process gets all the pixels up to the end
   if (my_rank == p - 1) {
-    my_range[1] = size - 1;
+    printf("highest ranking process\n");
+    my_range[1] = size;
   } else {
-    my_range[1] = my_range[0] + size/p;
+    my_range[1] = my_range[0] + h;
   }
 
   // Run mean filtering on image
-  meanFilter(width, height, image, window, my_range[0], my_range[1]);
+  printf("Process %d crunching (%d - %d)...\n", my_rank, my_range[0], my_range[1]);
+  meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
 
   if (my_rank != 0) {
-    printf("Process %d/%d sending (%d - %d)...\n", my_rank, p, my_range[0], size/p);
-    MPI_Send(image + my_range[0], size/p, MPI_CHAR, dest, tag, MPI_COMM_WORLD);
-    printf("Process %d/%d sent.\n", my_rank, p);
+    printf("Process %d/%d sending (%d - %d)...\n", my_rank, p-1, my_range[0], my_range[1]);
+    MPI_Send(image + size/p * my_rank, size*sizeof(char) + h, MPI_CHAR, 0, tag, MPI_COMM_WORLD);
+    printf("Process %d/%d sent.\n", my_rank, p-1);
   } else {
     for (int i=1; i < p; i ++) {
       printf("Process 0 receiving process %d\n", i);
-      MPI_Recv((image + (size/p * i)), size/p, MPI_CHAR, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
-      printf("Process %d/%d message received.\n", i, p);
+      MPI_Recv(image + size/p * i, size*sizeof(char) + h, MPI_CHAR, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
+      printf("Process %d/%d message received.\n", i, p-1);
     }
   }
 
 }
 
-void meanFilter(int width, int height, RGB *image, int window, int start, int end){
+void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
   int thing = (window - 1)/2;
   int topleft, current;
   double sum;
@@ -100,6 +102,24 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
     }
     //printf("pc: %d    total:     %f\n", pc, sum);
     // new pixel red value is average of ^
-    pixel->r = sum/count;
+    // if (rank == 0) {
+    //   pixel->r = 0 ;//sum/count;
+    // }
+
+    // else if (rank == 1) {
+    //   pixel->g = 0 ;//sum/count;
+    // } else {
+
+    // pixel->b = 0 ;//sum/count;
+    // }
+    if (pc > 4147200) {
+      pixel->r = 0 ;
+      pixel->g = 0 ;
+      pixel->b = 0 ;
+    }
+    if (pc > 8294400 - 1) {
+      printf("8294400");
+    }
+
   }
 }
