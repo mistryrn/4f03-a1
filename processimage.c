@@ -1,9 +1,8 @@
-
 #include "a1.h"
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+
 void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank);
 // void medianFilter();
 
@@ -80,31 +79,35 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
   int topleft, current;
   double sum[3];
   RGB *current_pixel;
+
   // For each pixel in this worker's quota
   for (int pc = start; pc < end; pc ++) {
+    // Current pixel of interest
     RGB *pixel = image + pc;
+
+    // Pixel at top left of window
     topleft = pc - (thing * width) - thing;
-    sum[0] = 0;
-    sum[1] = 0;
-    sum[2] = 0;
+
+    sum[0] = 0; // Red values
+    sum[1] = 0; // Green values
+    sum[2] = 0; // Blue values
     int count = 1;
     //printf("sum: %0.1f   count: %d\n", sum, count);
 
     // For each row in window
     for (int i=0; i < window; i ++) {
-
-      // For each column in row
+      // For each column in window
       for (int j=0; j < window; j ++) {
-        current = topleft + i * width - thing + j + 1;
+        // Determine the pixel we're looking at
+        current = topleft + j * width - thing + i + 1;
 
-        // If current pixel is outside range of window and image
+        // If current pixel is outside range of window and image, skip it
         if (current < 0 || current > width * height -1 || (current % width) > (pc % width) + thing) {
-          //printf("pc: %d    out of range: %d\n", pc, current);
+          // Do nothing
 
         // If current pixel is in range of window and image
         } else {
           current_pixel = image + current;
-          //printf("looking at: %d    r value:     %d\n", current, current_pixel->r);
           sum[0] = sum[0] + (current_pixel->r);
           sum[1] = sum[1] + (current_pixel->g);
           sum[2] = sum[2] + (current_pixel->b);
