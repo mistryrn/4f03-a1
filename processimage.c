@@ -70,13 +70,15 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
 void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
   int thing = (window - 1)/2;
   int topleft, current;
-  double sum;
+  double sum[3];
   RGB *current_pixel;
   // For each pixel in this worker's quota
   for (int pc = start; pc < end; pc ++) {
     RGB *pixel = image + pc;
     topleft = pc - (thing * width) - thing;
-    sum = 0;
+    sum[0] = 0;
+    //sum[1] = 0;
+    //sum[2] = 0;
     int count = 1;
     //printf("sum: %0.1f   count: %d\n", sum, count);
 
@@ -95,31 +97,18 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
         } else {
           current_pixel = image + current;
           //printf("looking at: %d    r value:     %d\n", current, current_pixel->r);
-          sum = sum + (current_pixel->r);
+          sum[0] = sum[0] + (current_pixel->r);
+          //sum[1] = sum[1] + (current_pixel->g);
+          //sum[2] = sum[2] + (current_pixel->b);
+
           count = count + 1;
         }
       }
     }
     //printf("pc: %d    total:     %f\n", pc, sum);
-    // new pixel red value is average of ^
-    // if (rank == 0) {
-    //   pixel->r = 0 ;//sum/count;
-    // }
-
-    // else if (rank == 1) {
-    //   pixel->g = 0 ;//sum/count;
-    // } else {
-
-    // pixel->b = 0 ;//sum/count;
-    // }
-    if (pc > 4147200) {
-      pixel->r = 0 ;
-      pixel->g = 0 ;
-      pixel->b = 0 ;
-    }
-    if (pc > 8294400 - 1) {
-      printf("8294400");
-    }
-
+    // new pixel rgb value is average of ^
+    pixel->r = sum[0]/count;
+    pixel->g = sum[1]/count;
+    pixel->b = sum[2]/count;
   }
 }
