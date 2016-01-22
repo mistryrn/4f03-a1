@@ -9,7 +9,6 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
 void processImage(int width, int height, RGB *image, int argc, char** argv)
 {
   // Initialize variables
-  int verbose = 1;
   int i, my_rank, p, n, my_range[2];
   double a, b;
 
@@ -65,10 +64,10 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
 
   if (my_rank != 0) {
-    MPI_Send(image + (size/p) * my_rank, size/p, mpi_rgb_type, 0, tag, MPI_COMM_WORLD);
+    MPI_Send(image + (size/p) * my_rank, size/p, mpi_rgb_type, dest, tag, MPI_COMM_WORLD);
   } else {
     for (int i=1; i < p; i ++) {
-      MPI_Recv(image + size/p * i, size + h, mpi_rgb_type, i, tag, MPI_COMM_WORLD, &status);
+      MPI_Recv(image + size/p * i, size + h, mpi_rgb_type, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
     }
   }
 
