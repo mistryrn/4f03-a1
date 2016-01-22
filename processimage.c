@@ -40,6 +40,8 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
 
   // Determine lower and upper values for pixel range
   my_range[0] = size/p*my_rank;
+
+  // ensure last process gets all the pixels up to the end
   if (my_rank == p - 1) {
     my_range[1] = size - 1;
   } else {
@@ -50,14 +52,14 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   meanFilter(width, height, image, window, my_range[0], my_range[1]);
 
   if (my_rank != 0) {
-    printf("Process %d/%d sending...\n", my_rank, p);
-    MPI_Send(image + my_range[0], my_range[1] - my_range[0], MPI_CHAR, dest, tag, MPI_COMM_WORLD);
-
+    printf("Process %d/%d sending (%d - %d)...\n", my_rank, p, my_range[0], size/p);
+    MPI_Send(image + my_range[0], size/p, MPI_CHAR, dest, tag, MPI_COMM_WORLD);
+    printf("Process %d/%d sent.\n", my_rank, p);
   } else {
     for (int i=1; i < p; i ++) {
-      MPI_Recv(image + size/p*i, size/p, MPI_CHAR, source, tag, MPI_COMM_WORLD, &status);
+      printf("Process 0 receiving process %d\n", i);
+      MPI_Recv((image + (size/p * i)), size/p, MPI_CHAR, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
       printf("Process %d/%d message received.\n", i, p);
-
     }
   }
 
