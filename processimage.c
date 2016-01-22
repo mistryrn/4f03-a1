@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-void meanFilter(int width, int height, RGB *image, int window, int start, int end);
+void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank);
 // void medianFilter();
 
 void processImage(int width, int height, RGB *image, int argc, char** argv)
@@ -36,6 +36,18 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
     printf("Pixels in image: %d\nPixels/process:  %.0f\nTotal processes: %d\n", size, h, p);
     printf("----------------------\n");
   }
+  /* create a type for struct RGB */
+  const int nitems=3;
+  int          blocklengths[3] = {sizeof(char),sizeof(char),sizeof(char)};
+  MPI_Datatype types[3] = {MPI_CHAR, MPI_CHAR, MPI_CHAR};
+  MPI_Datatype mpi_rgb_type;
+  MPI_Aint     offsets[3];
+  offsets[0] = offsetof(RGB, r);
+  offsets[1] = offsetof(RGB, g);
+  offsets[2] = offsetof(RGB, b);
+  MPI_Type_create_struct(nitems, blocklengths, offsets, types, &mpi_rgb_type);
+  MPI_Type_commit(&mpi_rgb_type);
+  /* ------ */
 
   MPI_Barrier(MPI_COMM_WORLD);
   // Determine lower and upper values for pixel range
@@ -51,21 +63,19 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   // Run mean filtering on image
   printf("Process %d crunching pixels %d - %d...\n", my_rank, my_range[0], my_range[1]);
   MPI_Barrier(MPI_COMM_WORLD);
-  meanFilter(width, height, image, window, my_range[0], my_range[1]);
+  meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
 
   if (my_rank != 0) {
-    MPI_Send(image + (size/p * my_rank), size + h, MPI_CHAR, 0, tag, MPI_COMM_WORLD);
+    MPI_Send(image + (size/p) * my_rank, size/p, mpi_rgb_type, 0, tag, MPI_COMM_WORLD);
   } else {
     for (int i=1; i < p; i ++) {
-
-      MPI_Recv(image + size/p * i, size + h, MPI_CHAR, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
-      printf("Data from process %d received. size/p * i:%d\n", i, size/p * i);
+      MPI_Recv(image + size/p * i, size + h, mpi_rgb_type, i, tag, MPI_COMM_WORLD, &status);
     }
   }
 
 }
 
-void meanFilter(int width, int height, RGB *image, int window, int start, int end){
+void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
   int thing = (window - 1)/2;
   int topleft, current;
   double sum[3];
