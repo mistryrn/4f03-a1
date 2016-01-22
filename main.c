@@ -22,5 +22,7 @@ int main(int argc, char** argv)
     writePPM(argv[2], width, height, max, image);
   }
 
+  MPI_Finalize();
+
   return(0);
 }

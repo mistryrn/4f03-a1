@@ -10,7 +10,6 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
 void processImage(int width, int height, RGB *image, int argc, char** argv)
 {
   // Initialize variables
-  printf("pre-filter 0");
   int verbose = 1;
   int i, my_rank, p, n, my_range[2];
   double a, b;
@@ -26,7 +25,6 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
 
   // Get number of pixels per process
   double h = size/p;
-  printf("pre-filter 1");
 
   // Get parameters from command line
   int window = atoi(argv[3]);
@@ -38,7 +36,6 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
     printf("Pixels in image: %d\nPixels/process:  %.0f\nTotal processes: %d\n", size, h, p);
     printf("----------------------\n");
   }
-  printf("pre-filter 2");
 
 
   // Determine lower and upper values for pixel range
@@ -50,20 +47,20 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   }
 
   // Run mean filtering on image
-  printf("pre-filter 3");
   meanFilter(width, height, image, window, my_range[0], my_range[1]);
 
   if (my_rank != 0) {
+    printf("Process %d/%d sending...\n", my_rank, p);
     MPI_Send(image + my_range[0], my_range[1] - my_range[0], MPI_CHAR, dest, tag, MPI_COMM_WORLD);
 
   } else {
     for (int i=1; i < p; i ++) {
       MPI_Recv(image + size/p*i, size/p, MPI_CHAR, source, tag, MPI_COMM_WORLD, &status);
+      printf("Process %d/%d message received.\n", i, p);
+
     }
   }
 
-  // Clean up
-  MPI_Finalize();
 }
 
 void meanFilter(int width, int height, RGB *image, int window, int start, int end){
@@ -71,7 +68,6 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
   int topleft, current;
   double sum;
   RGB *current_pixel;
-  printf("infilter");
   // For each pixel in this worker's quota
   for (int pc = start; pc < end; pc ++) {
     RGB *pixel = image + pc;
