@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank);
+void meanFilter(int width, int height, RGB *image, int window, int start, int end);
 // void medianFilter();
 
 void processImage(int width, int height, RGB *image, int argc, char** argv)
@@ -51,20 +51,21 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   // Run mean filtering on image
   printf("Process %d crunching pixels %d - %d...\n", my_rank, my_range[0], my_range[1]);
   MPI_Barrier(MPI_COMM_WORLD);
-  meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
+  meanFilter(width, height, image, window, my_range[0], my_range[1]);
 
   if (my_rank != 0) {
-    MPI_Send(image + size/p * my_rank, size*sizeof(char) + h, MPI_CHAR, 0, tag, MPI_COMM_WORLD);
+    MPI_Send(image + (size/p * my_rank), size + h, MPI_CHAR, 0, tag, MPI_COMM_WORLD);
   } else {
     for (int i=1; i < p; i ++) {
-      MPI_Recv(image + size/p * i, size*sizeof(char) + h, MPI_CHAR, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
-      printf("Data from process %d received.\n", i);
+
+      MPI_Recv(image + size/p * i, size + h, MPI_CHAR, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
+      printf("Data from process %d received. size/p * i:%d\n", i, size/p * i);
     }
   }
 
 }
 
-void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
+void meanFilter(int width, int height, RGB *image, int window, int start, int end){
   int thing = (window - 1)/2;
   int topleft, current;
   double sum[3];
@@ -74,8 +75,8 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
     RGB *pixel = image + pc;
     topleft = pc - (thing * width) - thing;
     sum[0] = 0;
-    //sum[1] = 0;
-    //sum[2] = 0;
+    sum[1] = 0;
+    sum[2] = 0;
     int count = 1;
     //printf("sum: %0.1f   count: %d\n", sum, count);
 
@@ -87,7 +88,7 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
         current = topleft + i * width - thing + j + 1;
 
         // If current pixel is outside range of window and image
-        if (current < 0 || current > width * height - 1 || (current % width) > (pc % width) + thing) {
+        if (current < 0 || current > width * height -1 || (current % width) > (pc % width) + thing) {
           //printf("pc: %d    out of range: %d\n", pc, current);
 
         // If current pixel is in range of window and image
@@ -95,8 +96,8 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
           current_pixel = image + current;
           //printf("looking at: %d    r value:     %d\n", current, current_pixel->r);
           sum[0] = sum[0] + (current_pixel->r);
-          //sum[1] = sum[1] + (current_pixel->g);
-          //sum[2] = sum[2] + (current_pixel->b);
+          sum[1] = sum[1] + (current_pixel->g);
+          sum[2] = sum[2] + (current_pixel->b);
 
           count = count + 1;
         }
