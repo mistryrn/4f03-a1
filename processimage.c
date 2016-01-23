@@ -88,6 +88,8 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
   RGB *copysrcpixel;
   RGB *pixel;
 
+
+  // Deep copy unmodified <- img
   for (i=0; i < width*height; i++) {
     copydestpixel = unmodified + i;
     copysrcpixel = image + i;
