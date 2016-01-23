@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "mpi.h"
-
 #include "a1.h"
 
 void writePPM(char* file, int width, int height, int max, const RGB *image)
 {
   int i;
+  printf("Writing result...  ");
 
   // open file for writing
   FILE *fd;
@@ -16,14 +16,12 @@ void writePPM(char* file, int width, int height, int max, const RGB *image)
   // output the header
   fprintf(fd, "P3\n");  
   fprintf(fd, "%d %d\n%d\n", width, height, max);
-  printf("Writing result...  ");
   // write the image
   for (i = 0; i < height*width; i++)
   {
     const RGB *p = image+i;
     fprintf(fd, "%d %d %d ", p->r, p->g, p->b);
   }
-  printf("done.\n");
 }
 
 

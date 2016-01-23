@@ -2,6 +2,7 @@
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank);
 // void medianFilter();
@@ -29,11 +30,12 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   char *filter = argv[4];
 
   // Print header
-  if (my_rank == 0 && verbose) {
+  if (my_rank == 0) {
     printf("Window size:     %dx%d\nFilter Type:     %s\n", window, window, filter);
     printf("Pixels in image: %d\nPixels/process:  %.0f\nTotal processes: %d\n", size, h, p);
     printf("----------------------\n");
   }
+
   /* create a type for struct RGB */
   const int nitems=3;
   int          blocklengths[3] = {sizeof(char),sizeof(char),sizeof(char)};
@@ -60,14 +62,15 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
 
   // Run mean filtering on image
   printf("Process %d crunching pixels %d - %d...\n", my_rank, my_range[0], my_range[1]);
-  MPI_Barrier(MPI_COMM_WORLD);
   meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
 
   if (my_rank != 0) {
+    // Send this rank's image chunk to process zero
     MPI_Send(image + (size/p) * my_rank, size/p, mpi_rgb_type, dest, tag, MPI_COMM_WORLD);
   } else {
-    for (int i=1; i < p; i ++) {
-      MPI_Recv(image + size/p * i, size + h, mpi_rgb_type, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
+    for (i=1; i < p; i ++) {
+      // Wait to receive data from other processes
+      MPI_Recv(image + size/p * i, size + h, mpi_rgb_type, i, tag, MPI_COMM_WORLD, &status);
     }
   }
 
@@ -76,13 +79,18 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
 void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
   int thing = (window - 1)/2;
   int topleft, current;
+  int pc, i, j;
   double sum[3];
+
+  RGB *unmodified = (RGB*)malloc(width*height*sizeof(RGB));
+  memcpy(&unmodified, &image, sizeof(image));
   RGB *current_pixel;
+  RGB *pixel;
 
   // For each pixel in this worker's quota
-  for (int pc = start; pc < end; pc ++) {
+  for (pc = start; pc < end; pc ++) {
     // Current pixel of interest
-    RGB *pixel = image + pc;
+    pixel = image + pc;
 
     // Pixel at top left of window
     topleft = pc - (thing * width) - thing;
@@ -94,11 +102,11 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
     //printf("sum: %0.1f   count: %d\n", sum, count);
 
     // For each row in window
-    for (int i=0; i < window; i ++) {
+    for (i=0; i < window; i ++) {
       // For each column in window
-      for (int j=0; j < window; j ++) {
+      for (j=0; j < window; j ++) {
         // Determine the pixel we're looking at
-        current = topleft + j * width - thing + i + 1;
+        current = topleft + i * width - thing + j + 1;
 
         // If current pixel is outside range of window and image, skip it
         if (current < 0 || current > width * height -1 || (current % width) > (pc % width) + thing) {
@@ -106,7 +114,7 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
 
         // If current pixel is in range of window and image
         } else {
-          current_pixel = image + current;
+          current_pixel = unmodified + current;
           sum[0] = sum[0] + (current_pixel->r);
           sum[1] = sum[1] + (current_pixel->g);
           sum[2] = sum[2] + (current_pixel->b);
