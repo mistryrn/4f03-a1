@@ -79,13 +79,23 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
 void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
   int thing = (window - 1)/2;
   int topleft, current;
-  int pc, i, j;
+  int pc, i, j, cpypx;
   double sum[3];
 
   RGB *unmodified = (RGB*)malloc(width*height*sizeof(RGB));
-  memcpy(&unmodified, &image, sizeof(image));
   RGB *current_pixel;
+  RGB *copydestpixel;
+  RGB *copysrcpixel;
   RGB *pixel;
+
+  for (i=0; i < width*height; i++) {
+    copydestpixel = unmodified + i;
+    copysrcpixel = image + i;
+
+    copydestpixel->r = copysrcpixel->r;
+    copydestpixel->g = copysrcpixel->g;
+    copydestpixel->b = copysrcpixel->b;
+  }
 
   // For each pixel in this worker's quota
   for (pc = start; pc < end; pc ++) {
@@ -129,4 +139,30 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
     pixel->g = sum[1]/count;
     pixel->b = sum[2]/count;
   }
+}
+
+
+// Code courtesy of https://en.wikiversity.org/wiki/C_Source_Code/Find_the_median_and_mean
+float median(int n, int x[]) {
+    float temp;
+    int i, j;
+    // the following two loops sort the array x in ascending order
+    for(i=0; i<n-1; i++) {
+        for(j=i+1; j<n; j++) {
+            if(x[j] < x[i]) {
+                // swap elements
+                temp = x[i];
+                x[i] = x[j];
+                x[j] = temp;
+            }
+        }
+    }
+
+    if(n%2==0) {
+        // if there is an even number of elements, return mean of the two elements in the middle
+        return((x[n/2] + x[n/2 - 1]) / 2.0);
+    } else {
+        // else return the element in the middle
+        return x[n/2];
+    }
 }
