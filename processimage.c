@@ -5,7 +5,7 @@
 #include <string.h>
 
 void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank);
-// void medianFilter();
+void medianFilter(int width, int height, RGB *image, int window, int start, int end, int rank);
 
 void processImage(int width, int height, RGB *image, int argc, char** argv)
 {
@@ -62,7 +62,13 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
 
   // Run mean filtering on image
   printf("Process %d crunching pixels %d - %d...\n", my_rank, my_range[0], my_range[1]);
-  meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
+  if ( *filter == 'A') {
+    meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
+  } else if ( *filter == 'M' ) {
+    medianFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
+  } else {
+    printf("Error: Invalid filter specified. Please use either 'A' for Mean, or 'M' for Median.\n");
+  }
 
   if (my_rank != 0) {
     // Send this rank's image chunk to process zero
@@ -145,26 +151,110 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
 
 
 // Code courtesy of https://en.wikiversity.org/wiki/C_Source_Code/Find_the_median_and_mean
-float median(int n, int x[]) {
-    float temp;
+void median(int n, int s, int x[], float m[]) {
+    int temp[3] = {0};
     int i, j;
     // the following two loops sort the array x in ascending order
     for(i=0; i<n-1; i++) {
         for(j=i+1; j<n; j++) {
             if(x[j] < x[i]) {
                 // swap elements
-                temp = x[i];
+                temp[0] = x[i];
+                temp[1] = x[i+s];
+                temp[2] = x[i+2*s];
+
                 x[i] = x[j];
-                x[j] = temp;
+                x[i+s] = x[j+s];
+                x[i+2*s] = x[j+2*s];
+
+                x[j] = temp[0];
+                x[j+s] = temp[1];
+                x[j+2*s] = temp[2];
             }
         }
     }
 
     if(n%2==0) {
         // if there is an even number of elements, return mean of the two elements in the middle
-        return((x[n/2] + x[n/2 - 1]) / 2.0);
+        m[0] = (x[n/2] + x[n/2 - 1]) / 2.0;
+        m[1] = (x[n/2 + s] + x[n/2 - 1 + s]) / 2.0;
+        m[2] = (x[n/2 + 2*s] + x[n/2 - 1 + 2*s]) / 2.0;
     } else {
         // else return the element in the middle
-        return x[n/2];
+        m[0] = x[n/2];
+        m[1] = x[n/2 + s];
+        m[2] = x[n/2 + 2*s];
     }
+}
+
+void medianFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
+  int thing = (window - 1)/2;
+  int windowsq = window*window;
+  int topleft, current;
+  int pc, i, j, cpypx;
+
+  // Stores the RGB values in the window, ie first window^2 values are R's, second are B's, then G's
+  int rgbvalues[3*windowsq];
+  float medianvalues[3] = {0};
+
+  RGB *unmodified = (RGB*)malloc(width*height*sizeof(RGB));
+  RGB *current_pixel;
+  RGB *copydestpixel;
+  RGB *copysrcpixel;
+  RGB *pixel;
+
+
+  // Deep copy unmodified <- img
+  for (i=0; i < width*height; i++) {
+    copydestpixel = unmodified + i;
+    copysrcpixel = image + i;
+
+    copydestpixel->r = copysrcpixel->r;
+    copydestpixel->g = copysrcpixel->g;
+    copydestpixel->b = copysrcpixel->b;
+  }
+
+  // For each pixel in this worker's quota
+  for (pc = start; pc < end; pc ++) {
+    // Current pixel of interest
+    pixel = image + pc;
+
+    // Pixel at top left of window
+    topleft = pc - (thing * width) - thing;
+
+    // Reset rgbvalues and median to 0's
+    memset(medianvalues, 0, sizeof(float)*3);
+    memset(rgbvalues, 0, sizeof(int)*3*windowsq);
+
+    int count = 1;
+
+    // For each row in window
+    for (i=0; i < window; i ++) {
+      // For each column in window
+      for (j=0; j < window; j ++) {
+        // Determine the pixel we're looking at
+        current = topleft + i * width - thing + j + 1;
+
+        // If current pixel is outside range of window and image, skip it
+        if (current < 0 || current > width * height -1 || (current % width) > (pc % width) + thing) {
+          // Do nothing
+
+        // If current pixel is in range of window and image
+        } else {
+          current_pixel = unmodified + current;
+          rgbvalues[count - 1] = current_pixel->r;
+          rgbvalues[count - 1 + windowsq] = current_pixel->g;
+          rgbvalues[count - 1 + 2*windowsq] = current_pixel->b;
+
+          count = count + 1;
+        }
+      }
+    }
+
+    // new pixel rgb values are median of values in window, sorted by R-value
+    median(count, windowsq, rgbvalues, medianvalues);
+    pixel->r = medianvalues[0];
+    pixel->g = medianvalues[1];
+    pixel->b = medianvalues[2];
+  }
 }
