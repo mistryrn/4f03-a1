@@ -149,42 +149,29 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
   }
 }
 
-
 // Code courtesy of https://en.wikiversity.org/wiki/C_Source_Code/Find_the_median_and_mean
-void median(int n, int s, int x[], float m[]) {
-    int temp[3] = {0};
-    int i, j;
-    // the following two loops sort the array x in ascending order
-    for(i=0; i<n-1; i++) {
-        for(j=i+1; j<n; j++) {
-            if(x[j] < x[i]) {
-                // swap elements
-                temp[0] = x[i];
-                temp[1] = x[i+s];
-                temp[2] = x[i+2*s];
-
-                x[i] = x[j];
-                x[i+s] = x[j+s];
-                x[i+2*s] = x[j+2*s];
-
-                x[j] = temp[0];
-                x[j+s] = temp[1];
-                x[j+2*s] = temp[2];
-            }
-        }
+float median(int n, int x[]) {
+  float temp;
+  int i, j;
+  // the following two loops sort the array x in ascending order
+  for (i = 0; i < n-1; i++) {
+    for (j = i+1; j < n; j++) {
+      if (x[j] < x[i]) {
+        // swap elements
+        temp = x[i];
+        x[i] = x[j];
+        x[j] = temp;
+      }
     }
+  }
 
-    if(n%2==0) {
-        // if there is an even number of elements, return mean of the two elements in the middle
-        m[0] = (x[n/2] + x[n/2 - 1]) / 2.0;
-        m[1] = (x[n/2 + s] + x[n/2 - 1 + s]) / 2.0;
-        m[2] = (x[n/2 + 2*s] + x[n/2 - 1 + 2*s]) / 2.0;
-    } else {
-        // else return the element in the middle
-        m[0] = x[n/2];
-        m[1] = x[n/2 + s];
-        m[2] = x[n/2 + 2*s];
-    }
+  if (n%2 == 0) {
+    // if there is an even number of elements, return the mean of the two elements in the middle
+    return ((x[n/2] + x[n/2 - 1]) / 2.0);
+  } else {
+    // else return the element in the middle
+    return x[n/2];
+  }
 }
 
 void medianFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
@@ -193,9 +180,10 @@ void medianFilter(int width, int height, RGB *image, int window, int start, int 
   int topleft, current;
   int pc, i, j, cpypx;
 
-  // Stores the RGB values in the window, ie first window^2 values are R's, second are B's, then G's
-  int rgbvalues[3*windowsq];
-  float medianvalues[3] = {0};
+  // Storage for the R, G, and B values in the window
+  int rvalues[windowsq];
+  int gvalues[windowsq];
+  int bvalues[windowsq];
 
   RGB *unmodified = (RGB*)malloc(width*height*sizeof(RGB));
   RGB *current_pixel;
@@ -222,9 +210,10 @@ void medianFilter(int width, int height, RGB *image, int window, int start, int 
     // Pixel at top left of window
     topleft = pc - (thing * width) - thing;
 
-    // Reset rgbvalues and median to 0's
-    memset(medianvalues, 0, sizeof(float)*3);
-    memset(rgbvalues, 0, sizeof(int)*3*windowsq);
+    // Reset R, G, and B values to 0's
+    memset(rvalues, 0, sizeof(int)*windowsq);
+    memset(gvalues, 0, sizeof(int)*windowsq);
+    memset(bvalues, 0, sizeof(int)*windowsq);
 
     int count = 1;
 
@@ -242,19 +231,17 @@ void medianFilter(int width, int height, RGB *image, int window, int start, int 
         // If current pixel is in range of window and image
         } else {
           current_pixel = unmodified + current;
-          rgbvalues[count - 1] = current_pixel->r;
-          rgbvalues[count - 1 + windowsq] = current_pixel->g;
-          rgbvalues[count - 1 + 2*windowsq] = current_pixel->b;
+          rvalues[count - 1] = current_pixel->r;
+          gvalues[count - 1] = current_pixel->g;
+          bvalues[count - 1] = current_pixel->b;
 
           count = count + 1;
         }
       }
     }
 
-    // new pixel rgb values are median of values in window, sorted by R-value
-    median(count, windowsq, rgbvalues, medianvalues);
-    pixel->r = medianvalues[0];
-    pixel->g = medianvalues[1];
-    pixel->b = medianvalues[2];
+    pixel->r = median(count, rvalues);
+    pixel->g = median(count, gvalues);
+    pixel->b = median(count, bvalues);
   }
 }
