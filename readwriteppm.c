@@ -68,10 +68,6 @@ RGB * readPPM(char* file, int* width, int* height, int* max)
   n = fscanf(fd, "%d %d %d", width, height, max);
   assert(n==3);
 
-  if (my_rank == 0) {
-    // printf("%d x %d image, max value= %d\n", *width, *height, *max);
-  }
-
   // size of image
   int size = *width*(*height);
   

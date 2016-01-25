@@ -61,15 +61,14 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   }
 
   // Run mean filtering on image
-  printf("Process %d crunching pixels %d - %d...\n", my_rank, my_range[0], my_range[1]);
   if ( *filter == 'A') {
+  printf("Process %d crunching pixels %d - %d...\n", my_rank, my_range[0], my_range[1]);
     meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
   } else if ( *filter == 'M' ) {
     medianFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
   } else {
     printf("Error: Invalid filter specified. Please use either 'A' for Mean, or 'M' for Median.\n");
   }
-
   if (my_rank != 0) {
     // Send this rank's image chunk to process zero
     MPI_Send(image + (size/p) * my_rank, size/p, mpi_rgb_type, dest, tag, MPI_COMM_WORLD);
@@ -87,7 +86,6 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
   int topleft, current;
   int pc, i, j, cpypx;
   double sum[3];
-
   RGB *unmodified = (RGB*)malloc(width*height*sizeof(RGB));
   RGB *current_pixel;
   RGB *copydestpixel;
@@ -100,7 +98,7 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
     copydestpixel = unmodified + i;
     copysrcpixel = image + i;
 
-    copydestpixel->r = copysrcpixel->r;
+    copydestpixel->r = copysrcpixel->r; // SEG FAULT HERE
     copydestpixel->g = copysrcpixel->g;
     copydestpixel->b = copysrcpixel->b;
   }
