@@ -28,7 +28,8 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   // Get parameters from command line
   int window = atoi(argv[3]);
   char *filter = argv[4];
-
+  RGB *pixxxlllz = image + width*height-1;
+    printf("thing r: %d from rank: %d\n", pixxxlllz->r, my_rank);
   // Print header
   if (my_rank == 0) {
     printf("Window size:     %dx%d\nFilter Type:     %s\n", window, window, filter);
@@ -61,8 +62,8 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   }
 
   // Run mean filtering on image
-  if ( *filter == 'A') {
   printf("Process %d crunching pixels %d - %d...\n", my_rank, my_range[0], my_range[1]);
+  if ( *filter == 'A') {
     meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
   } else if ( *filter == 'M' ) {
     medianFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
@@ -97,7 +98,6 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
   for (i=0; i < width*height; i++) {
     copydestpixel = unmodified + i;
     copysrcpixel = image + i;
-
     copydestpixel->r = copysrcpixel->r; // SEG FAULT HERE
     copydestpixel->g = copysrcpixel->g;
     copydestpixel->b = copysrcpixel->b;
