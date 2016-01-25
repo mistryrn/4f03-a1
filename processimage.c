@@ -67,7 +67,8 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   } else if ( *filter == 'M' ) {
     medianFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
   } else {
-    printf("Error: Invalid filter specified. Please use either 'A' for Mean, or 'M' for Median.\n");
+    if (my_rank == 0)
+      printf("Error: Invalid filter specified. Please use either 'A' for Mean, or 'M' for Median.\n");
   }
 
   if (my_rank != 0) {
