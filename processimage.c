@@ -13,7 +13,7 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   int i, my_rank, p, n, my_range[2];
   double a, b;
 
-  // initialize MPI
+  // Initialize MPI
   MPI_Status status;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &p);
@@ -60,13 +60,16 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
     my_range[1] = my_range[0] + h;
   }
 
-  // Run mean filtering on image
+  // Run filtering on image
   printf("Process %d crunching pixels %d - %d...\n", my_rank, my_range[0], my_range[1]);
-  if ( *filter == 'A') {
+
+  if ( *filter == 'A') { // mean filter
     meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
-  } else if ( *filter == 'M' ) {
+
+  } else if ( *filter == 'M' ) { // median filter
     medianFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
-  } else {
+
+  } else { // Invalid input for filter type
     if (my_rank == 0){
       printf("Error: Invalid filter specified. Please use either 'A' for Mean, or 'M' for Median.\n");
     }
@@ -94,7 +97,7 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
   RGB *pixel;
 
 
-  // Deep copy unmodified <- img
+  // Deep copy to store unmodified values
   for (i=0; i < width*height; i++) {
     copydestpixel = unmodified + i;
     copysrcpixel = image + i;

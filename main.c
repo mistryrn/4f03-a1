@@ -7,13 +7,14 @@
 
 int main(int argc, char** argv)
 {
+  // Initialize variables
   RGB *image = NULL;
   int width = 0, height = 0, max = 0;
   int my_rank, p, i;
   clock_t begin = 0;
   double time_spent;
 
-
+  // Initialize MPI
   MPI_Status status;
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -23,13 +24,19 @@ int main(int argc, char** argv)
     // Rank 0 read image from disk
     image = readPPM(argv[1], &width, &height, &max);
   } 
+
+  // Broadcast width and height to other processes
   MPI_Bcast(&width, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&height, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+  // if we didn't just read an image, allocate an empty one
   if (my_rank != 0) { 
-    image = (RGB*)malloc(width*height*sizeof(RGB));     
+    image = (RGB*)malloc(width*height*sizeof(RGB)); 
+    assert(image);    
   }
   else {
+    // Start timing. This only times process 0
+    // but gives a good idea of execution time.
     begin = clock();
   }
   // Broadcast image to remaining processes
