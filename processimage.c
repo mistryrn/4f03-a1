@@ -80,7 +80,6 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
       MPI_Recv(image + size/p * i, size + h, mpi_rgb_type, i, tag, MPI_COMM_WORLD, &status);
     }
   }
-
 }
 
 void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
