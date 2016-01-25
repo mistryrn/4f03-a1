@@ -28,8 +28,7 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   // Get parameters from command line
   int window = atoi(argv[3]);
   char *filter = argv[4];
-  RGB *pixxxlllz = image + width*height-1;
-    printf("thing r: %d from rank: %d\n", pixxxlllz->r, my_rank);
+
   // Print header
   if (my_rank == 0) {
     printf("Window size:     %dx%d\nFilter Type:     %s\n", window, window, filter);
@@ -68,8 +67,9 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   } else if ( *filter == 'M' ) {
     medianFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
   } else {
-    if (my_rank == 0)
+    if (my_rank == 0){
       printf("Error: Invalid filter specified. Please use either 'A' for Mean, or 'M' for Median.\n");
+    }
   }
   if (my_rank != 0) {
     // Send this rank's image chunk to process zero
