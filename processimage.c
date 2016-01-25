@@ -28,7 +28,8 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   // Get parameters from command line
   int window = atoi(argv[3]);
   char *filter = argv[4];
-
+  RGB *pixxxlllz = image + width*height-1;
+    printf("thing r: %d from rank: %d\n", pixxxlllz->r, my_rank);
   // Print header
   if (my_rank == 0) {
     printf("Window size:     %dx%d\nFilter Type:     %s\n", window, window, filter);
@@ -70,7 +71,6 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
     if (my_rank == 0)
       printf("Error: Invalid filter specified. Please use either 'A' for Mean, or 'M' for Median.\n");
   }
-
   if (my_rank != 0) {
     // Send this rank's image chunk to process zero
     MPI_Send(image + (size/p) * my_rank, size/p, mpi_rgb_type, dest, tag, MPI_COMM_WORLD);
@@ -88,7 +88,6 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
   int topleft, current;
   int pc, i, j, cpypx;
   double sum[3];
-
   RGB *unmodified = (RGB*)malloc(width*height*sizeof(RGB));
   RGB *current_pixel;
   RGB *copydestpixel;
@@ -100,8 +99,7 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
   for (i=0; i < width*height; i++) {
     copydestpixel = unmodified + i;
     copysrcpixel = image + i;
-
-    copydestpixel->r = copysrcpixel->r;
+    copydestpixel->r = copysrcpixel->r; // SEG FAULT HERE
     copydestpixel->g = copysrcpixel->g;
     copydestpixel->b = copysrcpixel->b;
   }
