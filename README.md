@@ -61,8 +61,7 @@ The work was broken down as follows:
 ###Results
 The following are results from McMaster's MPIHost server.
 
-![](http://jamiecounsell.me/static/img/mpi/res1.jpg)
+<img src="http://jamiecounsell.me/static/img/mpi/res1.jpg" width=400>
 
- 
 
-![](http://jamiecounsell.me/static/img/mpi/res2.jpg)
+<img src="http://jamiecounsell.me/static/img/mpi/res2.jpg" width=400>
