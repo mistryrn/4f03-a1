@@ -8,7 +8,9 @@ typedef struct {
 RGB * readPPM(char* file, int* width, int* height, int* max);
 void writePPM(char* file, int width, int height, int max, const RGB *image);
 
-void processImage(int width, int height, RGB *image, int argc, char** argv);
+void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank);
+void medianFilter(int width, int height, RGB *image, int window, int start, int end, int rank);
 
+void processImage(int width, int height, RGB *image, int argc, char** argv);
 
 #endif
