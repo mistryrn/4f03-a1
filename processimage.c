@@ -76,13 +76,11 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   }
   if (my_rank != 0) {
     // Send this rank's image chunk to process zero
-    printf("rank %d sending from %d for size %d\n", my_rank, process_start, process_size);
     MPI_Send(image + process_start, process_size, mpi_rgb_type, dest, tag, MPI_COMM_WORLD);
   } else {
     for (i=1; i < p; i ++) {
       start = size/p*i;
       process_size = getSize(i, width, height, window, p);
-      printf("receiving from %d. start: %d. size: %d\n", i, start, process_size);
       // Wait to receive data from other processes
       MPI_Recv(image + start, process_size, mpi_rgb_type, i, tag, MPI_COMM_WORLD, &status);
     }

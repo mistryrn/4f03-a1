@@ -40,7 +40,6 @@ int main(int argc, char** argv)
   } else {
     start = getStart(my_rank, width, height, window, p);
     size = getSize(my_rank, width, height, window, p);
-    printf("Process %d size: %d, start: %d\n", my_rank, size, start);
     image = (RGB*)malloc(size*sizeof(RGB)); 
     assert(image);    
     MPI_Recv(image, size*sizeof(RGB), MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
