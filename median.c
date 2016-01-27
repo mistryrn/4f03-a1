@@ -4,7 +4,7 @@
 
 float median(int n, int x[]);
 
-void medianFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
+void medianFilter(int size, int width, RGB *image, int window, int start, int end, int rank){
   int thing = (window - 1)/2;
   int windowsq = window*window;
   int topleft, current;
@@ -15,7 +15,7 @@ void medianFilter(int width, int height, RGB *image, int window, int start, int 
   int gvalues[windowsq];
   int bvalues[windowsq];
 
-  RGB *unmodified = (RGB*)malloc(width*height*sizeof(RGB));
+  RGB *unmodified = (RGB*)malloc(size*sizeof(RGB));
   RGB *current_pixel;
   RGB *copydestpixel;
   RGB *copysrcpixel;
@@ -23,7 +23,7 @@ void medianFilter(int width, int height, RGB *image, int window, int start, int 
 
 
   // Deep copy unmodified <- img
-  for (i=0; i < width*height; i++) {
+  for (i=0; i < size; i++) {
     copydestpixel = unmodified + i;
     copysrcpixel = image + i;
 
@@ -55,7 +55,7 @@ void medianFilter(int width, int height, RGB *image, int window, int start, int 
         current = topleft + i * width - thing + j + 1;
 
         // If current pixel is outside range of window and image, skip it
-        if (current < 0 || current > width * height -1 || (current % width) > (pc % width) + thing) {
+        if (current < 0 || current > size -1 || (current % width) > (pc % width) + thing) {
           // Do nothing
 
         // If current pixel is in range of window and image

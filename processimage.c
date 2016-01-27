@@ -67,7 +67,7 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
     meanFilter(my_size, width, image, window, process_start, process_size, my_rank);
 
   } else if ( *filter == 'M' ) { // median filter
-    medianFilter(width, height, image, window, process_start, process_size, my_rank);
+    medianFilter(my_size, height, image, window, process_start, process_size, my_rank);
 
   } else { // Invalid input for filter type
     if (my_rank == 0){

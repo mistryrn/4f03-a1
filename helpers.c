@@ -22,7 +22,7 @@ int getSize(int rank, int width, int height, int window, int p) {
     if (rank >= p-1 || size > total) {
         size = total - start;
     } else if (start == 0) {
-        size = size - (width/2 * window);
+        size = size - ((window-1)/2 * width);
     }
     return size;
 }
