@@ -33,7 +33,7 @@ void meanFilter(int size, int width, RGB *image, int window, int start, int end,
     sum[0] = 0; // Red values
     sum[1] = 0; // Green values
     sum[2] = 0; // Blue values
-    int count = 1;
+    int count = 0;
     //printf("sum: %0.1f   count: %d\n", sum, count);
 
     // For each row in window
