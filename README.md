@@ -55,7 +55,7 @@ The work was broken down as follows:
 - Both authors wrote the rest of `main.c` and `processimage.c` together, in person
 
 ###Notes
-
+- Each process allocates and receives only the chunk of the image that it requires. Process 0 allocates and stores the entire source image, as it needs it to write back at the end of the filtering. Each other process uses only the pixels required to compute its ration of the original problem.
 - This current implementation will suffer if an image loaded is larger than available memory. It is assumed that this is not the case for this assignment.
 
 ###Results
