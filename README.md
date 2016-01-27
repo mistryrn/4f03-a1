@@ -55,8 +55,8 @@ The work was broken down as follows:
 - Both authors wrote the rest of `main.c` and `processimage.c` together, in person
 
 ###Notes
-1. It may be more efficient in some cases to exchange `MPI_Bcast` for `MPI_Send` and `MPI_Recv` when passing the image from rank 0 to other processes. This could also benefit from only sending the parts of the image required to each process. However, in many cases (especially as **p** gets large), `MPI_Recv` is [much faster](http://mpitutorial.com/tutorials/mpi-broadcast-and-collective-communication/#comparison-of-mpi_bcast-with-mpi_send-and-mpi_recv), so it is difficult to tell which would be more beneficial
-2. This current implementation will suffer if an image loaded is larger than available memory. It is assumed that this is not the case for this assignment.
+
+- This current implementation will suffer if an image loaded is larger than available memory. It is assumed that this is not the case for this assignment.
 
 ###Results
 The following are results from McMaster's MPIHost server.
