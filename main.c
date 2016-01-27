@@ -10,9 +10,10 @@ int main(int argc, char** argv)
   // Initialize variables
   RGB *image = NULL;
   int width = 0, height = 0, max = 0;
-  int my_rank, p, i;
+  int my_rank, p, i, start, size;
   clock_t begin = 0;
   double time_spent;
+  int window = atoi(argv[3]);
 
   // Initialize MPI
   MPI_Status status;
@@ -29,18 +30,22 @@ int main(int argc, char** argv)
   MPI_Bcast(&width, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&height, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  // if we didn't just read an image, allocate an empty one
-  if (my_rank != 0) { 
-    image = (RGB*)malloc(width*height*sizeof(RGB)); 
-    assert(image);    
-  }
-  else {
-    // Start timing. This only times process 0
-    // but gives a good idea of execution time.
+  if (my_rank == 0) {
     begin = clock();
+    for (i=1; i<p; i++) {
+      start = getStart(i, width, height, window, p);
+      size = getSize(i, width, height, window, p);
+      MPI_Send(image +start, size*sizeof(RGB), MPI_CHAR, i, 0, MPI_COMM_WORLD);
+    }
+  } else {
+    start = getStart(my_rank, width, height, window, p);
+    size = getSize(my_rank, width, height, window, p);
+    printf("Process %d size: %d, start: %d\n", my_rank, size, start);
+    image = (RGB*)malloc(size*sizeof(RGB)); 
+    assert(image);    
+    MPI_Recv(image, size*sizeof(RGB), MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
   }
-  // Broadcast image to remaining processes
-  MPI_Bcast(image, width*height*sizeof(RGB), MPI_CHAR, 0, MPI_COMM_WORLD);
+
   processImage(width, height, image, argc, argv);
 
   if (my_rank == 0) {

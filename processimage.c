@@ -6,7 +6,7 @@
 void processImage(int width, int height, RGB *image, int argc, char** argv)
 {
   // Initialize variables
-  int i, my_rank, p, n, my_range[2];
+  int i, my_rank, p, n, start, my_size, process_start, process_size;
   double a, b;
 
   // Initialize MPI
@@ -47,23 +47,27 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
 
   MPI_Barrier(MPI_COMM_WORLD);
   // Determine lower and upper values for pixel range
-  my_range[0] = h*my_rank;
-
-  // ensure last process gets all the pixels up to the end
-  if (my_rank == p - 1) {
-    my_range[1] = size;
+  start = getStart(my_rank, width, height, window, p);
+  my_size = getSize(my_rank, width, height, window, p);
+  if (my_rank == 0) {
+    process_start = 0;
+    process_size = my_size - (width * (window-1)/2);
+  } else if (my_rank >= p-1) {
+    process_start = (width * (window-1)/2);
+    process_size = my_size;
   } else {
-    my_range[1] = my_range[0] + h;
+    process_start = (width * (window-1)/2);
+    process_size = my_size;
   }
 
   // Run filtering on image
-  printf("Process %d crunching pixels %d - %d...\n", my_rank, my_range[0], my_range[1]);
+  printf("Process %d crunching pixels %d - %d...\n", my_rank, start, my_size);
 
   if ( *filter == 'A') { // mean filter
-    meanFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
+    meanFilter(my_size, width, image, window, process_start, process_size, my_rank);
 
   } else if ( *filter == 'M' ) { // median filter
-    medianFilter(width, height, image, window, my_range[0], my_range[1], my_rank);
+    medianFilter(width, height, image, window, process_start, process_size, my_rank);
 
   } else { // Invalid input for filter type
     if (my_rank == 0){
@@ -72,11 +76,15 @@ void processImage(int width, int height, RGB *image, int argc, char** argv)
   }
   if (my_rank != 0) {
     // Send this rank's image chunk to process zero
-    MPI_Send(image + (size/p) * my_rank, size/p, mpi_rgb_type, dest, tag, MPI_COMM_WORLD);
+    printf("rank %d sending from %d for size %d\n", my_rank, process_start, process_size);
+    MPI_Send(image + process_start, process_size, mpi_rgb_type, dest, tag, MPI_COMM_WORLD);
   } else {
     for (i=1; i < p; i ++) {
+      start = size/p*i;
+      process_size = getSize(i, width, height, window, p);
+      printf("receiving from %d. start: %d. size: %d\n", i, start, process_size);
       // Wait to receive data from other processes
-      MPI_Recv(image + size/p * i, size + h, mpi_rgb_type, i, tag, MPI_COMM_WORLD, &status);
+      MPI_Recv(image + start, process_size, mpi_rgb_type, i, tag, MPI_COMM_WORLD, &status);
     }
   }
 }

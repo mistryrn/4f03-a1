@@ -1,12 +1,12 @@
 #include "a1.h"
 #include <stdlib.h>
 
-void meanFilter(int width, int height, RGB *image, int window, int start, int end, int rank){
+void meanFilter(int size, int width, RGB *image, int window, int start, int end, int rank){
   int thing = (window - 1)/2;
   int topleft, current;
   int pc, i, j, cpypx;
   double sum[3];
-  RGB *unmodified = (RGB*)malloc(width*height*sizeof(RGB));
+  RGB *unmodified = (RGB*)malloc(size*sizeof(RGB));
   RGB *current_pixel;
   RGB *copydestpixel;
   RGB *copysrcpixel;
@@ -14,7 +14,7 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
 
 
   // Deep copy to store unmodified values
-  for (i=0; i < width*height; i++) {
+  for (i=0; i < size; i++) {
     copydestpixel = unmodified + i;
     copysrcpixel = image + i;
     copydestpixel->r = copysrcpixel->r; // SEG FAULT HERE
@@ -44,7 +44,7 @@ void meanFilter(int width, int height, RGB *image, int window, int start, int en
         current = topleft + i * width - thing + j + 1;
 
         // If current pixel is outside range of window and image, skip it
-        if (current < 0 || current > width * height -1 || (current % width) > (pc % width) + thing) {
+        if (current < 0 || current > size -1 || (current % width) > (pc % width) + thing) {
           // Do nothing
 
         // If current pixel is in range of window and image
