@@ -1,8 +1,13 @@
 #include "a1.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <stdio.h>
 
 float median(int n, int x[]);
+float median2(int n, int arr[]);
+
+void swap(int* a, int* b);
 
 void medianFilter(int size, int width, RGB *image, int window, int start, int end, int rank){
   int thing = (window - 1)/2;
@@ -70,13 +75,14 @@ void medianFilter(int size, int width, RGB *image, int window, int start, int en
       }
     }
 
-    pixel->r = median(count, rvalues);
-    pixel->g = median(count, gvalues);
-    pixel->b = median(count, bvalues);
+    pixel->r = median2(count, rvalues);
+    pixel->g = median2(count, gvalues);
+    pixel->b = median2(count, bvalues);
   }
 }
 
 // Code courtesy of https://en.wikiversity.org/wiki/C_Source_Code/Find_the_median_and_mean
+// Great for testing, but slow.
 float median(int n, int x[]) {
   float temp;
   int i, j;
@@ -99,4 +105,63 @@ float median(int n, int x[]) {
     // else return the element in the middle
     return x[n/2];
   }
+}
+
+void swap(int* a, int* b){
+    int t = *a;
+    *a = *b;
+    *b = t;
+}
+
+// Code courtesy of http://stackoverflow.com/questions/1961173/median-function-in-c-math-library
+// Much faster than median(). 
+float median2(int n, int arr[])
+{
+    int low, high ;
+    int median;
+    int middle, ll, hh;
+    low = 0 ; high = n-1 ; median = (low + high) / 2;
+    for (;;) {
+        if (high <= low) /* One element only */
+            return arr[median] ;
+        if (high == low + 1) { /* Two elements only */
+            if (arr[low] > arr[high])
+                swap(arr+low, arr+high) ;
+                return arr[median] ;
+        }
+        /* Find median of low, middle and high items; swap into position low */
+        middle = (low + high) / 2;
+        if (arr[middle] > arr[high]){
+            swap(arr + middle, arr +high);
+        }
+        if (arr[low] > arr[high]){
+          swap(arr+low, arr+high);
+        }
+        if (arr[middle] > arr[low]){
+            swap(arr+middle, arr+low);
+        }
+        
+        /* Swap low item (now in position middle) into position (low+1) */
+        swap(arr+middle, arr+low+1) ;
+        /* Nibble from each end towards middle, swapping items when stuck */
+        ll = low + 1;
+        hh = high;
+
+        for (;;) {
+            do ll++; while (arr[low] > arr[ll]) ;
+            do hh--; while (arr[hh] > arr[low]) ;
+            if (hh < ll)
+                break;
+            swap(arr+ll, arr+hh) ;
+        }
+        
+        /* Swap middle item (in position low) back into correct position */
+        swap(arr+low, arr+hh) ;
+        /* Re-set active partition */
+        if (hh <= median)
+            low = ll;
+        if (hh >= median)
+            high = hh - 1;
+    }
+    return arr[median];
 }
