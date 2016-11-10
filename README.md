@@ -1,5 +1,4 @@
 ##4F03 Assignment 1
-This project is also available through [GitHub](https://github.com/mistryrn/4f03). The URL will be private until the submission deadline. 
 
 ###Authors  
   
